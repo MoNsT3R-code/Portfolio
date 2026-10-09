@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chunking Lab — RAG Chunking Strategy Evaluation Framework</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root{
+  --paper:#EEF0E9;
+  --paper-line: rgba(20,24,26,0.07);
+  --ink:#14181A;
+  --ink-soft:#565F5A;
+  --ink-faint:#8B948E;
+  --line:#C7CBBF;
+  --card:#F8F9F4;
+  --white:#FFFFFF;
+  --teal:#0F7A6B;
+  --amber:#D98A2B;
+
+  --c-fixed:#3D6FB4;
+  --c-recursive:#0F7A6B;
+  --c-semantic:#8B4FA8;
+  --c-sliding:#D98A2B;
+  --c-structure:#C2542F;
+  --c-hierarchical:#4A5A3A;
+}
+
+*{ box-sizing:border-box; }
+
+html{ scroll-behavior:smooth; }
+
+body{
+  margin:0;
+  background:var(--paper);
+  background-image:
+    linear-gradient(var(--paper-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--paper-line) 1px, transparent 1px);
+  background-size:28px 28px;
+  color:var(--ink);
+  font-family:'IBM Plex Mono', monospace;
+  font-size:14px;
+  line-height:1.6;
+}
+
+h1,h2,h3{
+  font-family:'Space Grotesk', sans-serif;
+  margin:0;
+  color:var(--ink);
+}
+
+a{ color:var(--teal); }
+
+.wrap{ max-width:1120px; margin:0 auto; padding:0 24px; }
+
+/* ---------- header ---------- */
+
+header.top{
+  padding:56px 0 40px;
+  border-bottom:1px solid var(--line);
+}
+
+.eyebrow-row{
+  display:flex; align-items:center; gap:10px;
+  margin-bottom:18px;
+  color:var(--ink-faint);
+  font-size:12px;
+  letter-spacing:0.02em;
+}
+
+.eyebrow-row .dot{
+  width:6px; height:6px; border-radius:50%; background:var(--teal);
+}
+
+header.top h1{
+  font-size:44px;
+  font-weight:700;
+  letter-spacing:-0.01em;
+  max-width:14ch;
+}
+
+header.top .lede{
+  margin-top:16px;
+  max-width:62ch;
+  color:var(--ink-soft);
+  font-size:14.5px;
+}
+
+.chip-row{
+  display:flex; flex-wrap:wrap; gap:8px;
+  margin-top:28px;
+}
+
+.chip{
+  display:flex; align-items:center; gap:7px;
+  padding:6px 12px;
+  background:var(--white);
+  border:1px solid var(--line);
+  border-radius:3px;
+  font-size:12.5px;
+  color:var(--ink);
+  text-decoration:none;
+  transition:border-color 0.15s ease;
+}
+
+.chip:hover{ border-color:var(--ink); }
+
+.chip .swatch{
+  width:9px; height:9px; border-radius:2px; flex-shrink:0;
+}
+
+/* ---------- sections ---------- */
+
+section{ padding:52px 0; border-bottom:1px solid var(--line); }
+section:last-of-type{ border-bottom:none; }
+
+.section-head{ margin-bottom:28px; max-width:70ch; }
+.section-head h2{ font-size:26px; font-weight:600; }
+.section-head p{ margin-top:10px; color:var(--ink-soft); font-size:13.5px; }
+
+/* ---------- playground ---------- */
+
+.lab-grid{
+  display:grid;
+  grid-template-columns:1fr 320px;
+  gap:20px;
+}
+
+.panel{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:4px;
+  padding:18px;
+}
+
+.panel h3{
+  font-size:12px;
+  text-transform:none;
+  color:var(--ink-faint);
+  font-family:'IBM Plex Mono', monospace;
+  font-weight:600;
+  margin-bottom:10px;
+}
+
+textarea#inputText{
+  width:100%;
+  min-height:230px;
+  resize:vertical;
+  background:var(--white);
+  border:1px solid var(--line);
+  border-radius:3px;
+  padding:12px;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12.5px;
+  line-height:1.55;
+  color:var(--ink);
+}
+
+.text-tools{
+  display:flex; justify-content:space-between; align-items:center;
+  margin-top:10px; font-size:11.5px; color:var(--ink-faint);
+}
+
+.text-tools .btns{ display:flex; gap:8px; }
+
+.btn{
+  background:var(--white);
+  border:1px solid var(--line);
+  border-radius:3px;
+  padding:6px 11px;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:11.5px;
+  color:var(--ink);
+  cursor:pointer;
+}
+
+.btn:hover{ border-color:var(--ink); }
+
+.btn.primary{
+  background:var(--ink); color:var(--white); border-color:var(--ink);
+}
+
+/* strategy tabs */
+
+.tab-list{ display:flex; flex-direction:column; gap:6px; }
+
+.tab{
+  display:flex; align-items:center; gap:9px;
+  padding:9px 10px;
+  border:1px solid var(--line);
+  border-radius:3px;
+  background:var(--white);
+  cursor:pointer;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12.5px;
+  color:var(--ink);
+  text-align:left;
+}
+
+.tab .swatch{ width:9px; height:9px; border-radius:2px; flex-shrink:0; }
+
+.tab.active{
+  border-color:var(--ink);
+  background:var(--ink);
+  color:var(--white);
+}
+
+.tab-desc{
+  margin-top:12px;
+  font-size:11.5px;
+  color:var(--ink-soft);
+  line-height:1.55;
+  min-height:52px;
+}
+
+/* params */
+
+.params{ margin-top:18px; }
+
+.param-row{ margin-bottom:12px; }
+.param-row.hidden{ display:none; }
+
+.param-row label{
+  display:flex; justify-content:space-between;
+  font-size:11.5px; color:var(--ink-soft); margin-bottom:5px;
+}
+
+.param-row label span.val{ color:var(--ink); font-weight:600; }
+
+input[type="range"]{ width:100%; accent-color:var(--teal); }
+
+/* output */
+
+.output-panel{ margin-top:20px; }
+
+.stats-strip{
+  display:flex; flex-wrap:wrap; gap:0;
+  border:1px solid var(--line);
+  border-radius:4px;
+  overflow:hidden;
+  margin-bottom:18px;
+  background:var(--card);
+}
+
+.stat{
+  flex:1; min-width:110px;
+  padding:12px 16px;
+  border-right:1px solid var(--line);
+}
+.stat:last-child{ border-right:none; }
+
+.stat .label{ font-size:10.5px; color:var(--ink-faint); }
+.stat .value{ font-size:19px; font-family:'Space Grotesk',sans-serif; font-weight:600; margin-top:2px; }
+
+.chunk-stack{ display:flex; flex-direction:column; gap:10px; }
+
+.chunk-card{
+  background:var(--white);
+  border:1px solid var(--line);
+  border-left:4px solid var(--ink);
+  border-radius:3px;
+  padding:12px 14px;
+}
+
+.chunk-meta{
+  display:flex; gap:14px; align-items:center;
+  font-size:10.5px; color:var(--ink-faint);
+  margin-bottom:8px;
+  padding-bottom:8px;
+  border-bottom:1px dashed var(--line);
+}
+
+.chunk-meta .idx{ color:var(--ink); font-weight:600; }
+
+.chunk-text{
+  font-size:12px; color:var(--ink-soft);
+  white-space:pre-wrap; word-break:break-word;
+  max-height:150px; overflow:auto;
+}
+
+.parent-card{
+  border:1px solid var(--line);
+  border-left:4px solid var(--ink);
+  border-radius:3px;
+  padding:12px 14px 14px;
+  background:var(--white);
+}
+
+.parent-title{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:13.5px; font-weight:600; margin-bottom:8px;
+}
+
+.child-list{
+  margin-top:10px; padding-left:14px;
+  border-left:2px solid var(--paper-line);
+  display:flex; flex-direction:column; gap:8px;
+}
+
+.child-card{
+  background:var(--paper);
+  border:1px solid var(--line);
+  border-radius:3px;
+  padding:9px 11px;
+  font-size:11.5px; color:var(--ink-soft);
+}
+
+.child-meta{ font-size:10px; color:var(--ink-faint); margin-bottom:5px; }
+
+/* ---------- comparison table ---------- */
+
+.compare-note{
+  font-size:11.5px; color:var(--ink-faint); margin-bottom:16px;
+  padding:10px 12px; border:1px dashed var(--line); border-radius:3px;
+  background:var(--card);
+}
+
+.compare-table{ width:100%; border-collapse:collapse; font-size:12px; }
+
+.compare-table th{
+  text-align:left; font-weight:600; font-size:10.5px;
+  color:var(--ink-faint); padding:8px 10px;
+  border-bottom:1px solid var(--ink);
+}
+
+.compare-table td{
+  padding:12px 10px; border-bottom:1px solid var(--line);
+  vertical-align:top;
+}
+
+.strategy-cell{ display:flex; align-items:center; gap:8px; white-space:nowrap; }
+.strategy-cell .swatch{ width:10px; height:10px; border-radius:2px; flex-shrink:0; }
+.strategy-cell .name{ font-weight:600; font-family:'Space Grotesk',sans-serif; font-size:13px; }
+
+.bar-cell{ min-width:80px; }
+.bar-track{ background:var(--paper-line); border-radius:2px; height:6px; width:100%; }
+.bar-fill{ height:6px; border-radius:2px; }
+
+.small-note{ color:var(--ink-soft); font-size:11.5px; max-width:26ch; }
+
+tr.highlight td{ background:#FBF3DE; }
+
+/* ---------- decision finder ---------- */
+
+.finder-grid{
+  display:grid; grid-template-columns:1fr 1fr; gap:16px;
+  margin-bottom:20px;
+}
+
+.field label{
+  display:block; font-size:11px; color:var(--ink-faint); margin-bottom:6px;
+}
+
+select{
+  width:100%; padding:10px 12px;
+  background:var(--white); border:1px solid var(--line); border-radius:3px;
+  font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:var(--ink);
+}
+
+.result-card{
+  background:var(--ink); color:var(--white);
+  border-radius:4px; padding:22px 24px;
+  display:none;
+}
+
+.result-card.show{ display:block; }
+
+.result-top{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+.result-top .swatch{ width:12px; height:12px; border-radius:2px; }
+.result-top .name{ font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:600; }
+.result-why{ font-size:12.5px; line-height:1.7; color:#DDE0D6; }
+.result-trade{
+  margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.15);
+  font-size:11.5px; color:#B7BEB0;
+}
+.result-trade .k{ color:#DDE0D6; font-weight:600; }
+
+/* ---------- deliverables ---------- */
+
+.deliv-grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+
+.deliv-list{ list-style:none; margin:0; padding:0; }
+.deliv-list li{
+  padding:10px 0; border-bottom:1px solid var(--line);
+  font-size:12.5px; color:var(--ink-soft);
+  display:flex; gap:10px;
+}
+.deliv-list li .n{ color:var(--ink); font-weight:600; flex-shrink:0; }
+
+.success-box{
+  background:var(--card); border:1px solid var(--line); border-radius:4px;
+  padding:18px 20px;
+}
+.success-box .label{ font-size:10.5px; color:var(--ink-faint); margin-bottom:8px; }
+.success-box .q{ font-size:13.5px; color:var(--ink); line-height:1.6; font-family:'Space Grotesk',sans-serif; font-weight:600; }
+
+footer{
+  padding:30px 0 60px; color:var(--ink-faint); font-size:11px;
+}
+
+@media (max-width:820px){
+  .lab-grid{ grid-template-columns:1fr; }
+  .finder-grid{ grid-template-columns:1fr; }
+  .deliv-grid{ grid-template-columns:1fr; }
+  header.top h1{ font-size:32px; max-width:none; }
+  .compare-table{ display:block; overflow-x:auto; white-space:nowrap; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="top">
+    <div class="eyebrow-row"><span class="dot"></span> Chunking Strategies Evaluation Framework</div>
+    <h1>Chunking Lab</h1>
+    <p class="lede">
+      Chunking shapes everything downstream in a RAG system — retrieval accuracy, context
+      preservation, response quality, latency, and cost. This lab runs six chunking strategies
+      against the same text so you can see the trade-offs directly, then points you to the
+      strategy that fits your data and priorities.
+    </p>
+    <div class="chip-row">
+      <a class="chip" href="#lab"><span class="swatch" style="background:var(--c-fixed)"></span>Fixed-Size</a>
+      <a class="chip" href="#lab"><span class="swatch" style="background:var(--c-recursive)"></span>Recursive</a>
+      <a class="chip" href="#lab"><span class="swatch" style="background:var(--c-semantic)"></span>Semantic</a>
+      <a class="chip" href="#lab"><span class="swatch" style="background:var(--c-sliding)"></span>Sliding Window</a>
+      <a class="chip" href="#lab"><span class="swatch" style="background:var(--c-structure)"></span>Structure-Based</a>
+      <a class="chip" href="#lab"><span class="swatch" style="background:var(--c-hierarchical)"></span>Hierarchical</a>
+    </div>
+  </header>
+
+  <!-- ============ PLAYGROUND ============ -->
+  <section id="lab">
+    <div class="section-head">
+      <h2>Live playground</h2>
+      <p>Paste or edit text, pick a strategy, tune its parameters, and watch the chunks it produces —
+      along with chunk count, size distribution, estimated tokens, and processing time.</p>
+    </div>
+
+    <div class="lab-grid">
+      <div class="panel">
+        <h3>Source text</h3>
+        <textarea id="inputText"></textarea>
+        <div class="text-tools">
+          <span id="charCount">0 characters</span>
+          <div class="btns">
+            <button class="btn" id="loadSampleBtn">Load sample</button>
+            <button class="btn" id="clearBtn">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Strategy</h3>
+        <div class="tab-list" id="tabList"></div>
+        <div class="tab-desc" id="tabDesc"></div>
+
+        <div class="params" id="paramsPanel">
+          <div class="param-row" data-for="fixed,recursive,semantic,hierarchical">
+            <label>Chunk size (chars) <span class="val" id="sizeVal">300</span></label>
+            <input type="range" id="sizeSlider" min="80" max="900" step="10" value="300">
+          </div>
+          <div class="param-row" data-for="fixed">
+            <label>Overlap (chars) <span class="val" id="overlapVal">50</span></label>
+            <input type="range" id="overlapSlider" min="0" max="250" step="10" value="50">
+          </div>
+          <div class="param-row" data-for="sliding">
+            <label>Window (sentences) <span class="val" id="windowVal">3</span></label>
+            <input type="range" id="windowSlider" min="1" max="6" step="1" value="3">
+          </div>
+          <div class="param-row" data-for="sliding">
+            <label>Stride (sentences) <span class="val" id="strideVal">2</span></label>
+            <input type="range" id="strideSlider" min="1" max="5" step="1" value="2">
+          </div>
+          <div class="param-row" data-for="semantic">
+            <label>Similarity threshold <span class="val" id="threshVal">20%</span></label>
+            <input type="range" id="thresholdSlider" min="0" max="60" step="5" value="20">
+          </div>
+          <div class="param-row" data-for="structure">
+            <label style="justify-content:flex-start">Splits on markdown headings & paragraph breaks — no parameters to tune.</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="output-panel">
+      <div class="stats-strip" id="statsStrip"></div>
+      <div class="chunk-stack" id="outputPanel"></div>
+    </div>
+  </section>
+
+  <!-- ============ COMPARISON ============ -->
+  <section id="compare">
+    <div class="section-head">
+      <h2>Strategy comparison</h2>
+      <p>Reference scores across the five evaluation metrics from the project brief. These are
+      illustrative — grounded in each strategy's known behavior, not a claim of a specific benchmark run.
+      Validate against your own dataset and queries before committing.</p>
+    </div>
+
+    <div class="compare-note">
+      Scale: 1 (weak) – 5 (strong) for Retrieval Accuracy, Context Preservation, and Response Quality.
+      For Latency and Token Efficiency, higher = faster / cheaper.
+    </div>
+
+    <table class="compare-table" id="compareTable">
+      <thead>
+        <tr>
+          <th>Strategy</th>
+          <th>Retrieval acc.</th>
+          <th>Context preserv.</th>
+          <th>Response quality</th>
+          <th>Latency</th>
+          <th>Token efficiency</th>
+          <th>Best for</th>
+        </tr>
+      </thead>
+      <tbody id="compareBody"></tbody>
+    </table>
+  </section>
+
+  <!-- ============ DECISION FINDER ============ -->
+  <section id="finder">
+    <div class="section-head">
+      <h2>Decision finder</h2>
+      <p>Tell it what your data looks like and what you're optimizing for — it returns the strategy
+      to start with and why, drawn from the trade-offs above.</p>
+    </div>
+
+    <div class="finder-grid">
+      <div class="field">
+        <label for="dataTypeSelect">What does your data look like?</label>
+        <select id="dataTypeSelect">
+          <option value="technical">Technical documentation (headings, sections)</option>
+          <option value="conversational">Conversational transcripts / chat logs</option>
+          <option value="narrative">Narrative or long-form prose</option>
+          <option value="legal">Legal or contractual text</option>
+          <option value="code">Source code</option>
+          <option value="mixed">Mixed / unstructured</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="prioritySelect">What matters most right now?</label>
+        <select id="prioritySelect">
+          <option value="accuracy">Retrieval accuracy</option>
+          <option value="speed">Latency / speed</option>
+          <option value="cost">Token cost</option>
+          <option value="simplicity">Implementation simplicity</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="result-card" id="resultCard">
+      <div class="result-top">
+        <span class="swatch" id="resultSwatch"></span>
+        <span class="name" id="resultName"></span>
+      </div>
+      <div class="result-why" id="resultWhy"></div>
+      <div class="result-trade" id="resultTrade"></div>
+    </div>
+  </section>
+
+  <!-- ============ DELIVERABLES ============ -->
+  <section id="deliverables">
+    <div class="section-head">
+      <h2>Project scope</h2>
+      <p>What "done" looks like for Team AI.</p>
+    </div>
+
+    <div class="deliv-grid">
+      <ol class="deliv-list">
+        <li><span class="n">01</span> Working implementation of each of the six chunking strategies.</li>
+        <li><span class="n">02</span> A common evaluation dataset and test-query set shared across all strategies.</li>
+        <li><span class="n">03</span> A performance comparison run across every strategy on that dataset.</li>
+        <li><span class="n">04</span> Metrics captured per strategy: retrieval accuracy, context preservation, response quality, latency, token usage.</li>
+        <li><span class="n">05</span> A decision framework mapping problem type → recommended strategy, with quality/speed/cost trade-offs made explicit.</li>
+      </ol>
+
+      <div class="success-box">
+        <div class="label">Success criteria</div>
+        <div class="q">"For this type of data and use case, which chunking strategy should we choose,
+        and what evidence supports that decision?"</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Chunking Lab — evaluation tooling for the Chunking Strategies Evaluation Framework project.
+    Semantic chunking here uses a lightweight sentence-similarity heuristic to simulate topic-shift
+    detection; a production build should substitute real embeddings.
+  </footer>
+
+</div>
+
+<script>
+/* =========================================================
+   DATA
+========================================================= */
+
+const STRATS = [
+  { key:'fixed', name:'Fixed-Size', color:'var(--c-fixed)',
+    desc:'Slices text at a constant character count, with optional overlap. Fast, predictable, blind to meaning.' },
+  { key:'recursive', name:'Recursive', color:'var(--c-recursive)',
+    desc:'Tries separators in order — paragraph, line, sentence, word — falling back only when a piece still won\'t fit.' },
+  { key:'semantic', name:'Semantic', color:'var(--c-semantic)',
+    desc:'Groups sentences by similarity, starting a new chunk when the topic shifts. Simulated here with a word-overlap heuristic.' },
+  { key:'sliding', name:'Sliding Window', color:'var(--c-sliding)',
+    desc:'Windows of N sentences that overlap with the next window, trading duplicated tokens for continuity.' },
+  { key:'structure', name:'Structure-Based', color:'var(--c-structure)',
+    desc:'Splits directly on headings and paragraph boundaries so each chunk maps to a real section of the source.' },
+  { key:'hierarchical', name:'Hierarchical', color:'var(--c-hierarchical)',
+    desc:'Keeps a parent chunk per section plus smaller child chunks nested inside it for precise retrieval.' },
+];
+
+const compareData = [
+  { key:'fixed', retrieval:2, context:2, quality:2, latency:5, tokenEff:5,
+    bestFor:'Quick baselines, uniform short-form text, prototyping.' },
+  { key:'recursive', retrieval:4, context:4, quality:4, latency:4, tokenEff:4,
+    bestFor:'General-purpose default when structure is mixed or unknown.' },
+  { key:'semantic', retrieval:5, context:5, quality:5, latency:1, tokenEff:2,
+    bestFor:'Narrative prose, research papers, topic-shift-heavy content.' },
+  { key:'sliding', retrieval:3, context:5, quality:3, latency:3, tokenEff:2,
+    bestFor:'Conversational transcripts, dialogue, streaming logs.' },
+  { key:'structure', retrieval:4, context:4, quality:4, latency:4, tokenEff:4,
+    bestFor:'Markdown/HTML docs, code, technical documentation.' },
+  { key:'hierarchical', retrieval:5, context:5, quality:5, latency:2, tokenEff:3,
+    bestFor:'Legal contracts, long manuals, multi-level documents.' },
+];
+
+const tradeoffs = {
+  fixed:'Fast and cheap, but frequently cuts sentences or ideas mid-thought.',
+  recursive:'Solid all-rounder, but not specially tuned to any one content type.',
+  semantic:'Highest fidelity to meaning, but embedding calls make it slow and costly at scale.',
+  sliding:'Strong continuity across cuts, but duplicated tokens raise storage and embedding cost.',
+  structure:'Excellent when structure is clean; degrades quickly on unstructured text.',
+  hierarchical:'Best structure-aware accuracy, but adds real indexing and query complexity.'
+};
+
+const decisionTable = {
+  technical: {
+    accuracy: { strategy:'hierarchical', why:'Technical docs have real nested structure — sections inside chapters. Hierarchical chunking preserves that while keeping child chunks small enough to embed precisely.' },
+    speed: { strategy:'structure', why:'Header-based splitting is a single fast pass that already respects the document\'s structure — no need for a second hierarchy pass.' },
+    cost: { strategy:'structure', why:'One-pass structural splitting keeps chunk count and token overhead low while still respecting headings.' },
+    simplicity: { strategy:'recursive', why:'A generic recursive splitter needs no document-specific parsing logic, at some cost to structural awareness.' }
+  },
+  conversational: {
+    accuracy: { strategy:'sliding', why:'Sliding windows over turns preserve conversational context that a hard cut would otherwise break mid-exchange.' },
+    speed: { strategy:'fixed', why:'Fixed-size chunking is the fastest option when turn-by-turn nuance matters less than throughput.' },
+    cost: { strategy:'fixed', why:'No overlap-driven token duplication keeps storage and embedding costs minimal.' },
+    simplicity: { strategy:'fixed', why:'Character-count splitting is the simplest strategy to implement and reason about.' }
+  },
+  narrative: {
+    accuracy: { strategy:'semantic', why:'Prose shifts topic gradually. Semantic chunking follows meaning boundaries instead of an arbitrary length cutoff.' },
+    speed: { strategy:'recursive', why:'Recursive splitting on paragraph and sentence boundaries is fast and still respects natural breaks.' },
+    cost: { strategy:'recursive', why:'Avoids embedding-based similarity scoring, keeping the pipeline cheap to run at volume.' },
+    simplicity: { strategy:'recursive', why:'One well-tested splitter handles most prose without extra tuning.' }
+  },
+  legal: {
+    accuracy: { strategy:'hierarchical', why:'Clauses nest inside sections inside articles. Hierarchical chunking is the only option that keeps that structure queryable at both levels.' },
+    speed: { strategy:'structure', why:'Splitting on numbered clauses or headings is fast and still clause-aware.' },
+    cost: { strategy:'structure', why:'Avoids the extra parent-plus-child indexing overhead of full hierarchical chunking.' },
+    simplicity: { strategy:'structure', why:'A single structural pass is far easier to audit than a two-level hierarchy — important when legal review is involved.' }
+  },
+  code: {
+    accuracy: { strategy:'structure', why:'Splitting on function and class boundaries keeps each chunk semantically complete — ideally with an AST-aware parser rather than regex.' },
+    speed: { strategy:'structure', why:'Structural splitting is already a single fast pass over the file.' },
+    cost: { strategy:'structure', why:'Same single-pass cost profile as the speed-optimized choice.' },
+    simplicity: { strategy:'recursive', why:'A generic recursive splitter with code-aware separators is easier to stand up than a language-specific parser.' }
+  },
+  mixed: {
+    accuracy: { strategy:'recursive', why:'When structure is inconsistent or unknown, recursive chunking\'s cascading separators adapt without assuming a schema.' },
+    speed: { strategy:'fixed', why:'Uniform chunking is the fastest fallback for unpredictable input.' },
+    cost: { strategy:'fixed', why:'No structure detection or similarity scoring means minimal compute per document.' },
+    simplicity: { strategy:'fixed', why:'The fewest assumptions and the least code — the safest default for messy, uncatalogued data.' }
+  }
+};
+
+const SAMPLE_TEXT = `# Retrieval-Augmented Generation Systems
+
+Retrieval-augmented generation combines a language model with an external knowledge store, so answers can be grounded in documents the model was never trained on. The quality of that grounding depends heavily on how source documents are broken into retrievable pieces.
+
+## Why Chunking Matters
+
+A chunk that is too large drags irrelevant text into the model's context window, diluting the signal the model needs. A chunk that is too small strips away the surrounding sentences that give a fact its meaning. Somewhere between those extremes sits a chunk size that keeps retrieval precise without losing context.
+
+Latency and cost compound the problem. Every chunk becomes an embedding call, an index entry, and a candidate the retriever has to rank. Doubling the number of chunks roughly doubles indexing time and storage, even before a single query is run.
+
+## Fixed and Sliding Approaches
+
+Fixed-size chunking slices text at a constant character or token count. It is fast, predictable, and blind to meaning — a paragraph can be cut in half without warning. Sliding window chunking softens that blow by letting consecutive chunks overlap, trading some duplicated tokens for continuity across the cut.
+
+## Structure-Aware Approaches
+
+Recursive chunking tries several separators in order of preference, paragraph breaks, then line breaks, then sentence boundaries, falling back only when a piece still will not fit. Structure-based chunking goes further, splitting directly on headings, list boundaries, or code blocks, so each chunk maps to a real section of the source document.
+
+## Meaning-Aware Approaches
+
+Semantic chunking groups sentences by similarity rather than position, starting a new chunk only when the topic actually shifts. Hierarchical chunking keeps both levels at once: a parent chunk for broad context and smaller child chunks nested inside it for precise retrieval, letting a query match a specific clause while still returning the section it lives in.
+
+## Choosing a Strategy
+
+No single strategy wins across every dataset. A support-ticket transcript behaves nothing like a legal contract, and a contract behaves nothing like a code repository. The right choice depends on how the source document is structured, how much latency and cost the pipeline can absorb, and how precisely the downstream task needs to retrieve.`;
+
+/* =========================================================
+   CHUNKING ALGORITHMS
+========================================================= */
+
+function splitSentences(text){
+  return text.replace(/\n+/g,' ').split(/(?<=[.!?])\s+(?=[A-Z0-9"'(])/)
+    .map(s=>s.trim()).filter(Boolean);
+}
+
+function fixedSizeChunk(text, size, overlap){
+  const chunks=[]; let start=0;
+  const step = Math.max(1, size-overlap);
+  while(start < text.length){
+    const end = Math.min(start+size, text.length);
+    const c = text.slice(start,end).trim();
+    if(c) chunks.push(c);
+    if(end>=text.length) break;
+    start += step;
+  }
+  return chunks;
+}
+
+function slidingWindowChunk(text, windowSize, stride){
+  const sents = splitSentences(text);
+  const chunks=[]; let i=0;
+  while(i < sents.length){
+    const w = sents.slice(i, i+windowSize);
+    if(w.length===0) break;
+    chunks.push(w.join(' '));
+    if(i+windowSize >= sents.length) break;
+    i += stride;
+  }
+  return chunks;
+}
+
+function recursiveChunk(text, maxSize){
+  const seps = ['\n\n','\n','. ',' '];
+  function helper(t, sepIdx){
+    if(t.length<=maxSize) return [t];
+    if(sepIdx>=seps.length){
+      const out=[];
+      for(let i=0;i<t.length;i+=maxSize) out.push(t.slice(i,i+maxSize));
+      return out;
+    }
+    const sep=seps[sepIdx];
+    const parts = t.split(sep).filter(p=>p.length>0);
+    const merged=[]; let cur='';
+    for(const p of parts){
+      const candidate = cur ? cur+sep+p : p;
+      if(candidate.length<=maxSize){
+        cur=candidate;
+      } else {
+        if(cur) merged.push(cur);
+        if(p.length>maxSize){
+          merged.push(...helper(p, sepIdx+1));
+          cur='';
+        } else {
+          cur=p;
+        }
+      }
+    }
+    if(cur) merged.push(cur);
+    return merged;
+  }
+  return helper(text.trim(),0).map(c=>c.trim()).filter(Boolean);
+}
+
+function structureChunk(text){
+  const lines = text.split('\n');
+  const chunks=[]; let cur=[];
+  for(const line of lines){
+    if(/^#{1,6}\s+/.test(line) && cur.length>0){
+      chunks.push(cur.join('\n').trim());
+      cur=[line];
+    } else {
+      cur.push(line);
+    }
+  }
+  if(cur.length) chunks.push(cur.join('\n').trim());
+  const final=[];
+  for(const c of chunks){
+    if(c.length>800){
+      const paras=c.split(/\n\s*\n/).filter(p=>p.trim());
+      final.push(...paras);
+    } else final.push(c);
+  }
+  return final.filter(Boolean);
+}
+
+function hierarchicalChunk(text, childSize){
+  const parents = structureChunk(text);
+  return parents.map((p,idx)=>{
+    const m = p.match(/^#{1,6}\s+(.*)/);
+    const title = m ? m[1] : ('Section ' + (idx+1));
+    const children = p.length>childSize ? recursiveChunk(p, childSize) : [p];
+    return { title, parent:p, children };
+  });
+}
+
+function wordSet(s){
+  return new Set(
+    s.toLowerCase().replace(/[^a-z0-9\s]/g,'').split(/\s+/).filter(w=>w.length>3)
+  );
+}
+function jaccard(a,b){
+  let inter=0;
+  a.forEach(x=>{ if(b.has(x)) inter++; });
+  const union = new Set([...a,...b]).size;
+  return union===0 ? 0 : inter/union;
+}
+function semanticChunk(text, threshold, maxSize){
+  const sents = splitSentences(text);
+  const chunks=[]; let cur=[]; let curSet=new Set();
+  for(const s of sents){
+    const sSet = wordSet(s);
+    const sim = cur.length ? jaccard(curSet, sSet) : 1;
+    const curLen = cur.join(' ').length;
+    if(cur.length>0 && (sim<threshold || curLen>maxSize)){
+      chunks.push(cur.join(' '));
+      cur=[s]; curSet=new Set(sSet);
+    } else {
+      cur.push(s);
+      sSet.forEach(w=>curSet.add(w));
+    }
+  }
+  if(cur.length) chunks.push(cur.join(' '));
+  return chunks;
+}
+
+/* =========================================================
+   UI STATE + RENDER
+========================================================= */
+
+let currentStrategy = 'recursive';
+
+const inputText = document.getElementById('inputText');
+const charCount = document.getElementById('charCount');
+const tabList = document.getElementById('tabList');
+const tabDesc = document.getElementById('tabDesc');
+const outputPanel = document.getElementById('outputPanel');
+const statsStrip = document.getElementById('statsStrip');
+
+const sizeSlider = document.getElementById('sizeSlider');
+const overlapSlider = document.getElementById('overlapSlider');
+const windowSlider = document.getElementById('windowSlider');
+const strideSlider = document.getElementById('strideSlider');
+const thresholdSlider = document.getElementById('thresholdSlider');
+
+function colorFor(key){
+  return getComputedStyle(document.documentElement).getPropertyValue('--c-'+key).trim();
+}
+
+function buildTabs(){
+  tabList.innerHTML = '';
+  STRATS.forEach(s=>{
+    const btn = document.createElement('button');
+    btn.className = 'tab' + (s.key===currentStrategy ? ' active' : '');
+    btn.innerHTML = '<span class="swatch" style="background:'+s.color+'"></span>' + s.name;
+    btn.addEventListener('click', ()=>{
+      currentStrategy = s.key;
+      buildTabs();
+      updateParamVisibility();
+      render();
+    });
+    tabList.appendChild(btn);
+  });
+  const active = STRATS.find(s=>s.key===currentStrategy);
+  tabDesc.textContent = active.desc;
+}
+
+function updateParamVisibility(){
+  document.querySelectorAll('.param-row').forEach(row=>{
+    const list = row.getAttribute('data-for').split(',');
+    row.classList.toggle('hidden', !list.includes(currentStrategy));
+  });
+}
+
+[sizeSlider, overlapSlider, windowSlider, strideSlider, thresholdSlider].forEach(el=>{
+  el.addEventListener('input', ()=>{
+    document.getElementById('sizeVal').textContent = sizeSlider.value;
+    document.getElementById('overlapVal').textContent = overlapSlider.value;
+    document.getElementById('windowVal').textContent = windowSlider.value;
+    document.getElementById('strideVal').textContent = strideSlider.value;
+    document.getElementById('threshVal').textContent = thresholdSlider.value + '%';
+    render();
+  });
+});
+
+inputText.addEventListener('input', ()=>{
+  charCount.textContent = inputText.value.length + ' characters';
+  render();
+});
+
+document.getElementById('loadSampleBtn').addEventListener('click', ()=>{
+  inputText.value = SAMPLE_TEXT;
+  charCount.textContent = inputText.value.length + ' characters';
+  render();
+});
+
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  inputText.value = '';
+  charCount.textContent = '0 characters';
+  render();
+});
+
+function flattenForStats(chunks, isHier){
+  if(!isHier) return chunks;
+  const flat = [];
+  chunks.forEach(p=> p.children.forEach(c=>flat.push(c)) );
+  return flat;
+}
+
+function renderStats(chunks, isHier, timeMs){
+  const flat = flattenForStats(chunks, isHier);
+  const count = isHier ? chunks.length + ' sections / ' + flat.length + ' chunks' : String(chunks.length);
+  let avg=0, min=0, max=0, tokens=0;
+  if(flat.length){
+    const lens = flat.map(c=>c.length);
+    avg = Math.round(lens.reduce((a,b)=>a+b,0)/lens.length);
+    min = Math.min(...lens);
+    max = Math.max(...lens);
+    tokens = Math.round(lens.reduce((a,b)=>a+b,0)/4);
+  }
+  statsStrip.innerHTML = `
+    <div class="stat"><div class="label">Chunks</div><div class="value">${count}</div></div>
+    <div class="stat"><div class="label">Avg size (chars)</div><div class="value">${avg}</div></div>
+    <div class="stat"><div class="label">Min – max</div><div class="value">${min}–${max}</div></div>
+    <div class="stat"><div class="label">Est. tokens</div><div class="value">${tokens}</div></div>
+    <div class="stat"><div class="label">Time</div><div class="value">${timeMs.toFixed(2)}ms</div></div>
+  `;
+}
+
+function renderOutput(chunks, isHier, strategy){
+  outputPanel.innerHTML = '';
+  const color = colorFor(strategy);
+
+  if(!chunks || chunks.length===0){
+    outputPanel.innerHTML = '<div class="small-note">No text to chunk yet — load the sample or paste your own.</div>';
+    return;
+  }
+
+  if(isHier){
+    chunks.forEach((p, i)=>{
+      const card = document.createElement('div');
+      card.className = 'parent-card';
+      card.style.borderLeftColor = color;
+      const tokens = Math.round(p.parent.length/4);
+      card.innerHTML = `
+        <div class="chunk-meta"><span class="idx">Section ${i+1}</span><span>${p.parent.length} chars</span><span>~${tokens} tokens</span></div>
+        <div class="parent-title">${escapeHtml(p.title)}</div>
+        <div class="child-list"></div>
+      `;
+      const childList = card.querySelector('.child-list');
+      p.children.forEach((c, j)=>{
+        const cc = document.createElement('div');
+        cc.className = 'child-card';
+        cc.innerHTML = `<div class="child-meta">child ${j+1} · ${c.length} chars · ~${Math.round(c.length/4)} tokens</div>${escapeHtml(truncate(c,220))}`;
+        childList.appendChild(cc);
+      });
+      outputPanel.appendChild(card);
+    });
+    return;
+  }
+
+  chunks.forEach((c, i)=>{
+    const card = document.createElement('div');
+    card.className = 'chunk-card';
+    card.style.borderLeftColor = color;
+    const tokens = Math.round(c.length/4);
+    card.innerHTML = `
+      <div class="chunk-meta"><span class="idx">Chunk ${i+1}</span><span>${c.length} chars</span><span>~${tokens} tokens</span></div>
+      <div class="chunk-text">${escapeHtml(truncate(c,600))}</div>
+    `;
+    outputPanel.appendChild(card);
+  });
+}
+
+function truncate(s,n){ return s.length>n ? s.slice(0,n)+'…' : s; }
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function render(){
+  const text = inputText.value;
+  const size = parseInt(sizeSlider.value,10);
+  const overlap = parseInt(overlapSlider.value,10);
+  const win = parseInt(windowSlider.value,10);
+  const stride = parseInt(strideSlider.value,10);
+  const threshold = parseInt(thresholdSlider.value,10)/100;
+
+  const t0 = performance.now();
+  let chunks = [];
+  let isHier = false;
+
+  if(text.trim().length){
+    switch(currentStrategy){
+      case 'fixed': chunks = fixedSizeChunk(text, size, overlap); break;
+      case 'recursive': chunks = recursiveChunk(text, size); break;
+      case 'semantic': chunks = semanticChunk(text, threshold, size); break;
+      case 'sliding': chunks = slidingWindowChunk(text, win, stride); break;
+      case 'structure': chunks = structureChunk(text); break;
+      case 'hierarchical': chunks = hierarchicalChunk(text, size); isHier = true; break;
+    }
+  }
+  const t1 = performance.now();
+
+  renderStats(chunks, isHier, t1-t0);
+  renderOutput(chunks, isHier, currentStrategy);
+}
+
+/* =========================================================
+   COMPARISON TABLE
+========================================================= */
+
+function scoreBar(score, colorVar){
+  const pct = (score/5)*100;
+  return `<div class="bar-cell">
+    <div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:${colorVar}"></div></div>
+    <div class="small-note" style="margin-top:4px">${score}/5</div>
+  </div>`;
+}
+function latencyBar(score, colorVar){
+  const pct = (score/5)*100;
+  const labels = {1:'Slowest',2:'Slow',3:'Moderate',4:'Fast',5:'Fastest'};
+  return `<div class="bar-cell">
+    <div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:${colorVar}"></div></div>
+    <div class="small-note" style="margin-top:4px">${labels[score]}</div>
+  </div>`;
+}
+function costBar(score, colorVar){
+  const pct = (score/5)*100;
+  const labels = {1:'Highest cost',2:'High cost',3:'Moderate',4:'Low cost',5:'Lowest cost'};
+  return `<div class="bar-cell">
+    <div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:${colorVar}"></div></div>
+    <div class="small-note" style="margin-top:4px">${labels[score]}</div>
+  </div>`;
+}
+
+function buildCompareTable(){
+  const body = document.getElementById('compareBody');
+  body.innerHTML = '';
+  compareData.forEach(row=>{
+    const strat = STRATS.find(s=>s.key===row.key);
+    const color = colorFor(row.key);
+    const tr = document.createElement('tr');
+    tr.id = 'row-'+row.key;
+    tr.innerHTML = `
+      <td><div class="strategy-cell"><span class="swatch" style="background:${color}"></span><span class="name">${strat.name}</span></div></td>
+      <td>${scoreBar(row.retrieval, color)}</td>
+      <td>${scoreBar(row.context, color)}</td>
+      <td>${scoreBar(row.quality, color)}</td>
+      <td>${latencyBar(row.latency, color)}</td>
+      <td>${costBar(row.tokenEff, color)}</td>
+      <td><div class="small-note">${row.bestFor}</div></td>
+    `;
+    body.appendChild(tr);
+  });
+}
+
+/* =========================================================
+   DECISION FINDER
+========================================================= */
+
+const dataTypeSelect = document.getElementById('dataTypeSelect');
+const prioritySelect = document.getElementById('prioritySelect');
+const resultCard = document.getElementById('resultCard');
+const resultSwatch = document.getElementById('resultSwatch');
+const resultName = document.getElementById('resultName');
+const resultWhy = document.getElementById('resultWhy');
+const resultTrade = document.getElementById('resultTrade');
+
+function updateRecommendation(){
+  const dt = dataTypeSelect.value;
+  const pr = prioritySelect.value;
+  const rec = decisionTable[dt][pr];
+  const strat = STRATS.find(s=>s.key===rec.strategy);
+  const color = colorFor(rec.strategy);
+
+  resultSwatch.style.background = color;
+  resultName.textContent = strat.name;
+  resultWhy.textContent = rec.why;
+  resultTrade.innerHTML = '<span class="k">Trade-off:</span> ' + tradeoffs[rec.strategy];
+  resultCard.classList.add('show');
+
+  document.querySelectorAll('#compareTable tr').forEach(r=>r.classList.remove('highlight'));
+  const row = document.getElementById('row-'+rec.strategy);
+  if(row){
+    row.classList.add('highlight');
+    row.scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+}
+
+dataTypeSelect.addEventListener('change', updateRecommendation);
+prioritySelect.addEventListener('change', updateRecommendation);
+
+/* =========================================================
+   INIT
+========================================================= */
+
+buildTabs();
+updateParamVisibility();
+buildCompareTable();
+inputText.value = SAMPLE_TEXT;
+charCount.textContent = inputText.value.length + ' characters';
+render();
+updateRecommendation();
+</script>
+</body>
+</html>

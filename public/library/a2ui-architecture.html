@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Who owns the interface? Agentic UI in one page</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f6f8;--paper:#ffffff;--ink:#16222d;--muted:#55636f;--line:#d5dce2;--accent:#0d6a73;--tint:#e4f1f2;--warn:#8a4b12;--warnbg:#fbeedd;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10171d;--paper:#18222b;--ink:#e6edf2;--muted:#9aabb8;--line:#2c3a46;--accent:#4fc0c9;--tint:#173236;--warn:#f0b878;--warnbg:#33261a}}
+:root[data-theme="dark"]{--bg:#10171d;--paper:#18222b;--ink:#e6edf2;--muted:#9aabb8;--line:#2c3a46;--accent:#4fc0c9;--tint:#173236;--warn:#f0b878;--warnbg:#33261a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "IBM Plex Sans",system-ui,sans-serif}
+.page{max-width:840px;margin:24px auto;background:var(--paper);padding:34px 40px;border:1px solid var(--line)}
+h1{font:700 27px/1.15 "Source Serif 4",Georgia,serif;margin:0 0 6px;letter-spacing:-.01em}
+.dek{margin:0 0 16px;color:var(--muted);font-size:13px}
+h2{font:600 15px/1.3 "Source Serif 4",Georgia,serif;margin:0 0 6px;color:var(--accent)}
+p{margin:0 0 8px}
+.lead{font:400 15px/1.5 "Source Serif 4",Georgia,serif;border-left:3px solid var(--accent);padding-left:12px;margin-bottom:16px}
+.scroll{overflow-x:auto;margin-bottom:16px}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:560px}
+th,td{text-align:left;vertical-align:top;padding:7px 9px;border-bottom:1px solid var(--line)}
+th{background:var(--tint);font-weight:600}
+td:first-child{font-weight:600;white-space:nowrap}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-bottom:14px}
+ul{margin:0;padding-left:17px}
+li{margin-bottom:5px;font-size:13px}
+.note{background:var(--warnbg);color:var(--warn);padding:8px 11px;font-size:12px;margin-top:4px}
+.rec{background:var(--tint);padding:12px 14px;margin:2px 0 12px}
+.rec p{margin:0;font-size:13.5px}
+.src{color:var(--muted);font-size:11px;margin:0}
+@media (max-width:640px){.page{padding:22px 18px;margin:0;border:0}.cols{grid-template-columns:1fr;gap:12px}h1{font-size:23px}}
+@media print{@page{size:A4;margin:11mm}body{background:#fff;font-size:10.5px;line-height:1.38}.page{margin:0;border:0;padding:0;max-width:none}h1{font-size:21px}.lead{font-size:12px;margin-bottom:10px}table{font-size:9.6px;min-width:0}th,td{padding:4px 6px}li{font-size:10px;margin-bottom:3px}.cols{gap:18px;margin-bottom:8px}.rec p{font-size:10.5px}.rec{padding:8px 10px}.note{font-size:9.5px}.scroll{overflow:visible}}
+</style>
+</head>
+<body>
+<main class="page">
+<h1>Who owns the interface? Agentic UI in one page</h1>
+<p class="dek">A synthesis of five sources on A2UI, AG-UI, MCP Apps and small-model UI generation.</p>
+
+<p class="lead">Chat is a poor fit for picking dates, approving requests or comparing options. The industry response is to let agents produce interactions, and the real design question is who owns the UI: the application, the model, or the tool.</p>
+
+<div class="scroll">
+<table>
+<thead><tr><th>Owner</th><th>How it works</th><th>Examples</th><th>Strength</th><th>Cost</th></tr></thead>
+<tbody>
+<tr><td>Application</td><td>Model returns structured data; the app renders its own components.</td><td>Function calling, structured outputs</td><td>Full UX, branding and accessibility control</td><td>Every interaction must be anticipated in advance</td></tr>
+<tr><td>Model</td><td>Agent emits a declarative description; the host maps it to a trusted component catalog.</td><td>A2UI, OpenUI</td><td>Native look, portable across web, mobile and desktop; no executable code crosses the boundary</td><td>Limited to what the catalog offers; depends on LLM output reliability</td></tr>
+<tr><td>Tool</td><td>Tool ships a full interface, shown in a sandboxed iframe.</td><td>MCP Apps / MCP-UI</td><td>Rich, reusable, service-owned experiences</td><td>Heavier runtime, visual inconsistency, sandbox and messaging risks</td></tr>
+</tbody>
+</table>
+</div>
+
+<p style="font-size:13px">A separate layer, <strong>AG-UI</strong>, is not a UI format at all. It keeps the frontend and a running agent in sync (streaming, tool calls, state, user events) and can carry A2UI or MCP payloads.</p>
+
+<div class="cols">
+<section>
+<h2>What the research shows</h2>
+<ul>
+<li><strong>Frontier models need the schema in the prompt.</strong> On A2UI-Bench, GPT-5.4 scored 23.9 overall with only light instructions and 74.1 with the full schema (Macaron-A2UI, Mind Lab).</li>
+<li><strong>Training can replace long prompts.</strong> A Qwen3-235B model went from 21.6 to 63.6 with supervised fine-tuning and 74.2 after reinforcement learning, matching the prompted frontier baseline.</li>
+<li><strong>Small models can be enough.</strong> An Amazon study found a fine-tuned 4B model recovered about 98% of teacher semantic quality and 97% of visual quality at over 10x lower cost than frontier APIs, and ran in roughly 8 seconds versus 19 to 23 for Sonnet or Opus.</li>
+<li><strong>Train the model to read the catalog.</strong> Shuffling and renaming components during training beat the plain baseline; a richer catalog (up to about 100 components) helped even 0.8B models.</li>
+</ul>
+</section>
+<section>
+<h2>What to weigh</h2>
+<ul>
+<li><strong>Governed workflows</strong> (approvals, KYC, infrastructure changes) favor A2UI: consistent native UX, strong control over rendering.</li>
+<li><strong>Specialist experiences</strong> (seat maps, product configurators, analytics dashboards) favor MCP Apps: teams ship independently, at the price of consistency.</li>
+<li><strong>Failure modes differ.</strong> A2UI fails through malformed or unsupported schemas and lost state. MCP Apps fail through dropped messages and sandbox misconfiguration.</li>
+<li><strong>Memory and payload:</strong> iframes add a runtime per embedded app, while A2UI payloads are small JSON, though web assets cache well.</li>
+</ul>
+</section>
+</div>
+
+<div class="rec">
+<h2>Recommendation</h2>
+<p>Treat these as layers, not rivals. Use MCP for tool access, the application or A2UI for core governed workflows, MCP Apps for specialist third-party surfaces, and AG-UI where the frontend must stay live with the agent. Introduce structured UI incrementally, starting with high-friction steps such as approvals, rather than replacing chat at once.</p>
+</div>
+
+<p class="note">Caveats: the protocols are still evolving (A2UI v0.8 stable, v0.9 draft). Both studies use single-turn tests and LLM judges; the Amazon study did no user testing. The Happiest Minds ratings are qualitative vendor analysis, and the CopilotKit document is written from the AG-UI maintainers' perspective. The ASD legacy-technology kit was left out because it is unrelated.</p>
+<p class="src" style="margin-top:8px">Sources: "Beyond Chat" article; CopilotKit, AG-UI and A2UI Explained; Macaron-A2UI (arXiv 2605.24830); Toward Frontier-Quality Declarative UI Generation at Small-Model Cost (arXiv 2609.04184); Happiest Minds, The Shift to Agentic Interfaces, Parts 1 and 2.</p>
+</main>
+</body>
+</html>

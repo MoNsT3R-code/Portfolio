@@ -1,0 +1,13 @@
+node_modules
+dist
+dist-ssr
+*.log
+.DS_Store
+lighthouse
+screenshots
+
+# Held material (internal Stewart files, or authorship unconfirmed) stays on this machine
+public/library/held/
+src/content/library.held.json
+# Original source files and their local paths
+assets-src/

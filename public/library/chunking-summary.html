@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chunking Strategies Evaluation — Research Summary</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root{
+  --paper:#0F1420;
+  --paper-line: rgba(255,255,255,0.045);
+  --ink:#EAEEF7;
+  --ink-soft:#AEB6CC;
+  --ink-faint:#727C99;
+  --line:#2B3247;
+  --card:#161C2C;
+  --white:#1C2337;
+  --teal:#6BB2DB;
+  --amber:#EC9A5D;
+
+  --c-fixed:#6BB2DB;
+  --c-recursive:#7FCB9B;
+  --c-semantic:#C393E0;
+  --c-sliding:#EC9A5D;
+  --c-structure:#E88A93;
+  --c-hierarchical:#A79AF0;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+  margin:0;
+  background:var(--paper);
+  background-image:
+    linear-gradient(var(--paper-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--paper-line) 1px, transparent 1px);
+  background-size:28px 28px;
+  color:var(--ink);
+  font-family:'IBM Plex Mono', monospace;
+  font-size:14px;
+  line-height:1.65;
+}
+
+h1,h2,h3{
+  font-family:'Space Grotesk', sans-serif;
+  margin:0;
+  color:var(--ink);
+}
+
+.page{
+  max-width:880px;
+  margin:0 auto;
+  padding:52px 40px;
+  background:var(--paper);
+}
+
+.sheet{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:4px;
+  padding:44px 48px;
+  margin-bottom:28px;
+}
+
+.sheet + .sheet{ page-break-before:always; }
+
+/* ---- cover ---- */
+.cover .kicker{
+  display:flex; align-items:center; gap:10px;
+  color:var(--ink-faint); font-size:12px; margin-bottom:22px;
+}
+.cover .kicker .dot{ width:6px; height:6px; border-radius:50%; background:var(--teal); }
+.cover h1{ font-size:36px; font-weight:700; letter-spacing:-0.01em; max-width:20ch; }
+.cover .sub{ margin-top:10px; font-size:15px; color:var(--ink-soft); font-family:'Space Grotesk',sans-serif; }
+.cover .meta{ margin-top:26px; font-size:12.5px; color:var(--ink-faint); border-top:1px solid var(--line); padding-top:16px; }
+.qa-strip{
+  margin-top:28px; display:grid; grid-template-columns:repeat(4,1fr); gap:10px;
+}
+.qa-strip div{
+  background:var(--white); border:1px solid var(--line); border-radius:3px;
+  padding:12px 12px; font-size:11.5px; color:var(--ink-soft);
+  transition:border-color .15s ease, transform .1s ease;
+}
+.qa-strip a:hover div{ border-color:var(--teal); transform:translateY(-1px); }
+.qa-strip strong{ display:block; color:var(--ink); font-family:'Space Grotesk',sans-serif; font-size:12.5px; margin-bottom:3px;}
+
+/* ---- section head ---- */
+.section-head{ margin-bottom:24px; max-width:72ch; }
+.section-head .num{ color:var(--teal); font-size:12px; margin-bottom:8px; }
+.section-head h2{ font-size:23px; font-weight:600; }
+.section-head p{ margin-top:8px; color:var(--ink-soft); font-size:13.5px; max-width:68ch; }
+
+p{ margin:0 0 12px; }
+ul{ margin:0 0 12px; padding-left:20px; }
+li{ margin-bottom:6px; }
+
+.grid2{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+
+.chip-row{ display:flex; flex-wrap:wrap; gap:8px; margin:18px 0; }
+.chip{
+  display:flex; align-items:center; gap:7px;
+  padding:6px 12px; background:var(--white); border:1px solid var(--line);
+  border-radius:3px; font-size:12px; color:var(--ink);
+}
+.chip .swatch{ width:9px; height:9px; border-radius:2px; flex-shrink:0; }
+
+.strat-card{
+  background:var(--white); border:1px solid var(--line); border-left:3px solid var(--c);
+  border-radius:3px; padding:14px 16px; margin-bottom:10px;
+}
+.strat-card h4{ font-family:'Space Grotesk',sans-serif; font-size:14px; margin-bottom:4px; display:flex; gap:8px; align-items:center;}
+.strat-card h4 .swatch{ width:8px; height:8px; border-radius:2px; background:var(--c); }
+.strat-card p{ font-size:12.5px; color:var(--ink-soft); margin:0; }
+.strat-card .tag{ font-size:11px; color:var(--ink-faint); margin-top:6px; }
+
+table{ width:100%; border-collapse:collapse; margin:16px 0; font-size:12.5px; }
+th,td{ border:1px solid var(--line); padding:8px 10px; text-align:left; }
+th{ background:var(--white); font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:12px; }
+td.num, th.num{ text-align:center; }
+tr.top td{ background:rgba(107,178,219,0.14); font-weight:600; }
+tr.low td{ color:var(--ink-faint); }
+
+.callout{
+  background:rgba(236,154,93,0.12); border:1px solid rgba(236,154,93,0.4); border-radius:3px;
+  padding:14px 16px; font-size:13px; color:#F2C393; margin:16px 0;
+}
+.callout.teal{ background:rgba(107,178,219,0.12); border-color:rgba(107,178,219,0.4); color:#BFE0F5; }
+
+.finding{ display:flex; gap:12px; margin-bottom:12px; align-items:flex-start; }
+.finding .marker{ width:22px; height:22px; flex-shrink:0; border-radius:50%; background:var(--white); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--ink-faint); font-family:'Space Grotesk',sans-serif;}
+.finding p{ margin:0; font-size:13px; color:var(--ink-soft); }
+.finding strong{ color:var(--ink); }
+
+.rec-block{
+  background:var(--white); border:1px solid var(--line); border-radius:4px;
+  padding:20px 22px; margin-bottom:14px;
+}
+.rec-block h4{ font-family:'Space Grotesk',sans-serif; font-size:14.5px; margin-bottom:6px; }
+.rec-block .when{ font-size:11.5px; color:var(--teal); text-transform:none; margin-bottom:6px; }
+.rec-block p{ font-size:13px; color:var(--ink-soft); margin:0; }
+
+footer{
+  max-width:880px; margin:0 auto; padding:0 40px 60px;
+  font-size:11.5px; color:var(--ink-faint); text-align:center;
+}
+
+/* ---- nav ---- */
+html{ scroll-behavior:smooth; }
+nav.topnav{
+  position:sticky; top:0; z-index:20;
+  background:rgba(15,20,32,0.9); backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--line);
+}
+nav.topnav .inner{
+  max-width:880px; margin:0 auto; padding:0 40px;
+  display:flex; align-items:center; gap:4px; overflow-x:auto;
+}
+nav.topnav a{
+  display:block; padding:14px 10px; font-size:12px; color:var(--ink-soft);
+  text-decoration:none; white-space:nowrap; border-bottom:2px solid transparent;
+  cursor:pointer; transition:color .15s ease, border-color .15s ease;
+}
+nav.topnav a:hover{ color:var(--ink); }
+nav.topnav a.active{ color:var(--teal); border-bottom-color:var(--teal); }
+
+a.jump{ cursor:pointer; }
+.chip a{ color:inherit; text-decoration:none; }
+.chip{ cursor:pointer; transition:border-color .15s ease, transform .1s ease; }
+.chip:hover{ border-color:var(--teal); color:var(--teal); }
+.strat-card{ scroll-margin-top:64px; transition:border-color .15s ease; }
+.strat-card:target{ border-color:var(--teal); box-shadow:0 0 0 2px rgba(107,178,219,0.18); }
+.sheet{ scroll-margin-top:64px; }
+
+#back-to-top{
+  position:fixed; right:22px; bottom:22px; z-index:20;
+  width:40px; height:40px; border-radius:50%;
+  background:var(--ink); color:var(--paper);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Space Grotesk',sans-serif; font-size:16px;
+  text-decoration:none; box-shadow:0 2px 10px rgba(23,32,53,0.25);
+  opacity:0; pointer-events:none; transition:opacity .2s ease;
+}
+#back-to-top.show{ opacity:1; pointer-events:auto; }
+
+@media print{
+  nav.topnav, #back-to-top{ display:none; }
+}
+
+@media print{
+  body{ background:var(--paper); }
+  .sheet{ box-shadow:none; }
+}
+@media (max-width:700px){
+  .page{ padding:24px 14px; }
+  .sheet{ padding:26px 20px; }
+  .grid2, .qa-strip{ grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="inner">
+    <a href="#overview" class="jump">Overview</a>
+    <a href="#research" class="jump">Research</a>
+    <a href="#results" class="jump">Results</a>
+    <a href="#tradeoffs" class="jump">Trade-offs</a>
+    <a href="#recommendation" class="jump">Recommendation</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- PAGE 1 — COVER / OVERVIEW -->
+  <section class="sheet cover" id="overview">
+    <div class="kicker"><span class="dot"></span> RESEARCH SUMMARY — TEAM AI SYNC</div>
+    <h1>Chunking Strategies Evaluation Framework</h1>
+    <div class="sub">Which chunking strategy should we use, for which data, and why — backed by a working test lab and a 29-case evaluation.</div>
+    <div class="meta">Prepared for: Hadia &amp; Musfira &nbsp;·&nbsp; Version 1.0 — September 2026</div>
+
+    <p style="margin-top:26px; font-size:13.5px; color:var(--ink-soft);">
+      Chunking shapes everything downstream in a RAG system: retrieval accuracy, context preservation,
+      response quality, latency, and cost. No single strategy wins across every data type, so this project
+      built and ran ten chunking strategies against a shared evaluation set to find out which one to reach
+      for, and when.
+    </p>
+
+    <div class="qa-strip">
+      <a href="#research" class="jump" style="text-decoration:none; color:inherit;"><div><strong>Built →</strong>A working, interactive lab implementing all 6 core strategies live on real text</div></a>
+      <a href="#results" class="jump" style="text-decoration:none; color:inherit;"><div><strong>Tested →</strong>29 test cases across 3 real document types, scored on 5 metrics</div></a>
+      <a href="#results" class="jump" style="text-decoration:none; color:inherit;"><div><strong>Learned →</strong>Failures are systematic and traceable to specific chunk-boundary decisions</div></a>
+      <a href="#recommendation" class="jump" style="text-decoration:none; color:inherit;"><div><strong>Recommend →</strong>A 3-tier decision framework, not a single "best" strategy</div></a>
+    </div>
+  </section>
+
+  <!-- PAGE 2 — WHAT WE RESEARCHED / TECHNOLOGIES EXPLORED -->
+  <section class="sheet" id="research">
+    <div class="section-head">
+      <div class="num">01 — What we researched &amp; built</div>
+      <h2>Ten chunking approaches, one shared test bed</h2>
+      <p>We implemented the six strategies in scope, then went further and evaluated four advanced
+      "upgrade path" techniques for completeness. To make the comparison tangible (not just theoretical),
+      we also built a live playground: paste any text, run it through each strategy, and see the actual
+      chunks, chunk count, size distribution, estimated tokens, and processing time.</p>
+    </div>
+
+    <h3 style="font-size:14px; margin-bottom:10px;">Core strategies (in scope) — jump to results:</h3>
+    <div class="chip-row">
+      <a href="#strat-fixed" class="jump chip"><span class="swatch" style="background:var(--c-fixed)"></span>Fixed-Size</a>
+      <a href="#strat-recursive" class="jump chip"><span class="swatch" style="background:var(--c-recursive)"></span>Recursive</a>
+      <a href="#strat-semantic" class="jump chip"><span class="swatch" style="background:var(--c-semantic)"></span>Semantic</a>
+      <a href="#strat-sliding" class="jump chip"><span class="swatch" style="background:var(--c-sliding)"></span>Sliding Window</a>
+      <a href="#strat-structure" class="jump chip"><span class="swatch" style="background:var(--c-structure)"></span>Structure-Based</a>
+      <a href="#strat-hierarchical" class="jump chip"><span class="swatch" style="background:var(--c-hierarchical)"></span>Hierarchical</a>
+    </div>
+
+    <div class="strat-card" id="strat-fixed" style="--c:var(--c-fixed)">
+      <h4><span class="swatch"></span>Fixed-Size Chunking</h4>
+      <p>Slices text at a constant character count, with optional overlap. Fast, predictable, blind to meaning.</p>
+      <div class="tag">Best for: quick baselines, uniform short-form text, prototyping — <a href="#results" class="jump">see score →</a></div>
+    </div>
+    <div class="strat-card" id="strat-recursive" style="--c:var(--c-recursive)">
+      <h4><span class="swatch"></span>Recursive Chunking</h4>
+      <p>Tries separators in order — paragraph, line, sentence, word — falling back only when a piece still won't fit.</p>
+      <div class="tag">Best for: general-purpose default when structure is mixed or unknown — <a href="#results" class="jump">see score →</a></div>
+    </div>
+    <div class="strat-card" id="strat-semantic" style="--c:var(--c-semantic)">
+      <h4><span class="swatch"></span>Semantic Chunking</h4>
+      <p>Groups sentences by similarity, starting a new chunk when the topic shifts.</p>
+      <div class="tag">Best for (in theory): narrative prose, research papers, topic-shift-heavy content — <a href="#results" class="jump">see score →</a></div>
+    </div>
+    <div class="strat-card" id="strat-sliding" style="--c:var(--c-sliding)">
+      <h4><span class="swatch"></span>Sliding Window Chunking</h4>
+      <p>Windows of N sentences that overlap with the next window, trading duplicated tokens for continuity.</p>
+      <div class="tag">Best for: conversational transcripts, dialogue, streaming logs — <a href="#results" class="jump">see score →</a></div>
+    </div>
+    <div class="strat-card" id="strat-structure" style="--c:var(--c-structure)">
+      <h4><span class="swatch"></span>Structure-Based Chunking</h4>
+      <p>Splits directly on headings and paragraph boundaries so each chunk maps to a real section of the source.</p>
+      <div class="tag">Best for: markdown/HTML docs, code, technical documentation — <a href="#results" class="jump">see score →</a></div>
+    </div>
+    <div class="strat-card" id="strat-hierarchical" style="--c:var(--c-hierarchical)">
+      <h4><span class="swatch"></span>Hierarchical Chunking</h4>
+      <p>Keeps a parent chunk per section plus smaller child chunks nested inside it for precise retrieval.</p>
+      <div class="tag">Best for: legal contracts, long manuals, multi-level documents — <a href="#results" class="jump">see score →</a></div>
+    </div>
+
+    <h3 style="font-size:14px; margin:20px 0 10px;">Advanced techniques (explored beyond scope) — jump to results:</h3>
+    <div class="chip-row">
+      <a href="#results" class="jump chip">Contextual Retrieval</a>
+      <a href="#results" class="jump chip">Late Chunking</a>
+      <a href="#results" class="jump chip">Adaptive Chunking</a>
+      <a href="#results" class="jump chip">Sentence-Based (baseline for comparison)</a>
+    </div>
+
+    <div class="callout">
+      <strong>Methodology:</strong> Three representative documents (Employee Leave Policy, a Technical Manual,
+      and a Legal Contract) were each indexed with all ten strategies, then queried with a shared set of
+      29 test questions spanning fact retrieval, reasoning, summarization, and context preservation /
+      cross-reference. Every strategy was scored on the same five metrics: retrieval accuracy, context
+      preservation, response quality, latency, and token usage.
+    </div>
+  </section>
+
+  <!-- PAGE 3 — WHAT WE LEARNED (RESULTS) -->
+  <section class="sheet" id="results">
+    <div class="section-head">
+      <div class="num">02 — What we learned</div>
+      <h2>Evaluation results across 3 documents, 29 test cases</h2>
+      <p>Scores reflect accuracy against expected answers per document, out of 10, for a possible 30 per strategy.</p>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Strategy</th><th class="num">Leave Policy</th><th class="num">Tech. Manual</th><th class="num">Legal Contract</th><th class="num">Total /30</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Fixed-Size</td><td class="num">8/10</td><td class="num">9/10</td><td class="num">8/10</td><td class="num">25/30</td></tr>
+        <tr><td>Recursive</td><td class="num">9/10</td><td class="num">9/10</td><td class="num">9/10</td><td class="num">27/30</td></tr>
+        <tr class="low"><td>Semantic</td><td class="num">6/10</td><td class="num">4/10</td><td class="num">6/10</td><td class="num">16/30</td></tr>
+        <tr class="top"><td>Sliding Window</td><td class="num">10/10</td><td class="num">10/10</td><td class="num">10/10</td><td class="num">30/30</td></tr>
+        <tr class="top"><td>Structure-Based</td><td class="num">10/10</td><td class="num">10/10</td><td class="num">10/10</td><td class="num">30/30</td></tr>
+        <tr><td>Hierarchical</td><td class="num">9/10</td><td class="num">8/10</td><td class="num">9/10</td><td class="num">26/30</td></tr>
+        <tr class="top"><td>Contextual Retrieval</td><td class="num">10/10</td><td class="num">10/10</td><td class="num">10/10</td><td class="num">30/30</td></tr>
+        <tr class="top"><td>Late Chunking</td><td class="num">10/10</td><td class="num">10/10</td><td class="num">10/10</td><td class="num">30/30</td></tr>
+        <tr class="top"><td>Adaptive Chunking</td><td class="num">10/10</td><td class="num">10/10</td><td class="num">10/10</td><td class="num">30/30</td></tr>
+        <tr class="low"><td>Sentence-Based</td><td class="num">7/10</td><td class="num">6/10</td><td class="num">7/10</td><td class="num">20/30</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="font-size:14px; margin:22px 0 12px;">Key findings</h3>
+    <div class="finding"><div class="marker">1</div><p><strong>Semantic chunking underperforms consistently.</strong> Naive sentence-level splitting scored lowest on all three documents (16/30) — it kept separating headings and labels from the bullet-list content needed to answer questions.</p></div>
+    <div class="finding"><div class="marker">2</div><p><strong>Structure-Based is the strongest practical strategy.</strong> It matched the top score (30/30) while using the fewest tokens of any high scorer — no overlap or duplication needed.</p></div>
+    <div class="finding"><div class="marker">3</div><p><strong>Sliding Window matches top accuracy, but at a cost.</strong> Overlapping content adds roughly 1.5–2× the token volume of Structure-Based for the same result.</p></div>
+    <div class="finding"><div class="marker">4</div><p><strong>Recursive is the best low-cost default.</strong> 27/30 with no special configuration — a safe starting point for general, unstructured content.</p></div>
+    <div class="finding"><div class="marker">5</div><p><strong>Hierarchical needs careful tuning.</strong> Aggressive child-chunk splitting can reintroduce the same list-from-header fragmentation seen in Semantic Chunking.</p></div>
+    <div class="finding"><div class="marker">6</div><p><strong>Contextual Retrieval, Late Chunking, and Adaptive Chunking reach the highest ceiling</strong> (30/30 each), especially on cross-referenced content — but they're the most expensive and operationally complex options.</p></div>
+    <div class="finding"><div class="marker">7</div><p><strong>Failures were systematic, not random.</strong> Every error traced back to a specific chunk-boundary decision — list fragmentation, section separation, or a broken cross-reference — giving a reproducible evidence base for the recommendation.</p></div>
+  </section>
+
+  <!-- PAGE 4 — TRADE-OFFS -->
+  <section class="sheet" id="tradeoffs">
+    <div class="section-head">
+      <div class="num">03 — Trade-offs: quality, speed &amp; cost</div>
+      <h2>No strategy wins on every axis</h2>
+      <p>The strategies that score highest are also the most expensive to run. The decision is rarely
+      "which is best" — it's "which trade-off fits this data and this budget."</p>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Strategy</th><th>Accuracy tier</th><th>Relative cost</th><th>Best fit</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Fixed-Size</td><td>Moderate (58–67%)</td><td>1× (baseline)</td><td>Quick baseline, uniform text</td></tr>
+        <tr><td>Recursive</td><td>High (69%, best cheap)</td><td>1×</td><td>General articles, policies, reports</td></tr>
+        <tr class="low"><td>Semantic</td><td>Low end-to-end (54%)</td><td>Higher (~14× slower indexing)</td><td>Not recommended by default</td></tr>
+        <tr><td>Sliding Window</td><td>High (matches top)</td><td>1.5–3× (storage/tokens)</td><td>Transcripts, logs, dense QA</td></tr>
+        <tr class="top"><td>Structure-Based</td><td>High, lowest variance</td><td>0.5–1× (fewer, larger chunks)</td><td>Technical manuals, PDFs, tables</td></tr>
+        <tr><td>Hierarchical</td><td>High (needs tuning)</td><td>~2× (dual vector sets)</td><td>Long / cross-referential manuals</td></tr>
+        <tr><td>Contextual Retrieval</td><td>Highest (fewest failures)</td><td>+LLM cost (Haiku-class)</td><td>Legal contracts, cross-refs</td></tr>
+        <tr><td>Late Chunking / Adaptive</td><td>Highest ceiling</td><td>Embedding-only / 10–50×</td><td>Long docs / high-value low-volume</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      Avoid naive Semantic or Sentence-Level chunking by default — both repeatedly showed list and heading
+      fragmentation across all three sample datasets, unless specifically tuned for the corpus.
+    </div>
+  </section>
+
+  <!-- PAGE 5 — RECOMMENDATION -->
+  <section class="sheet" id="recommendation">
+    <div class="section-head">
+      <div class="num">04 — Recommendation &amp; decision framework</div>
+      <h2>What we'd recommend, and why</h2>
+      <p>"For this type of data and use case, which chunking strategy should we choose, and what evidence
+      supports that decision?" — this is the question the framework below is built to answer.</p>
+    </div>
+
+    <div class="rec-block">
+      <div class="when">DEFAULT — general articles, policies, reports</div>
+      <h4>Start with Recursive Chunking (~512 tokens)</h4>
+      <p>Delivered 27/30 across every document type tested, with no added complexity. It's the safest
+      starting point when a document's structure is mixed or unknown.</p>
+    </div>
+    <div class="rec-block">
+      <div class="when">STRUCTURED CONTENT — technical manuals, legal contracts, policies with headings/clauses/tables</div>
+      <h4>Switch to Structure-Based Chunking</h4>
+      <p>Tied for the top score (30/30) while using the fewest tokens of any high-scoring strategy. If
+      nesting is deep, upgrade to Hierarchical.</p>
+    </div>
+    <div class="rec-block">
+      <div class="when">HIGH-VALUE / CROSS-REFERENCE HEAVY — low-volume, high-stakes corpora</div>
+      <h4>Reserve Contextual Retrieval, Late Chunking, or Adaptive Chunking</h4>
+      <p>Justify the added LLM/compute cost with measured accuracy gains — these are for cases like
+      legal cross-references or long, interlinked documents, not general use.</p>
+    </div>
+
+    <table style="margin-top:20px;">
+      <thead>
+        <tr><th>Document / use-case type</th><th>Recommended strategy</th><th>Upgrade if needed</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>General articles, policies, reports</td><td>Recursive (~512 tokens)</td><td>Semantic, only if a measured recall gap justifies it</td></tr>
+        <tr><td>Technical manuals, structured docs</td><td>Structure-Based Chunking</td><td>Hierarchical for deep nesting</td></tr>
+        <tr><td>Legal contracts / policies</td><td>Structure-Based Chunking</td><td>+ Contextual Retrieval for cross-refs, if budget permits</td></tr>
+        <tr><td>Cross-referential long documents</td><td>Late Chunking or Hierarchical</td><td>Add parent-child retrieval for very long docs</td></tr>
+        <tr><td>High-value, low-volume corpora</td><td>Recursive baseline first</td><td>Adaptive Chunking (metric-guided selection)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout teal" style="margin-top:20px;">
+      <strong>Evidence base:</strong> 29 test cases across 3 document types, scored on retrieval accuracy,
+      context preservation, response quality, latency, and token usage. This gives Team AI a reproducible
+      way to match chunking strategy to data type — and to defend the trade-offs behind it.
+    </div>
+  </section>
+
+</div>
+<footer>
+  Chunking Strategies Evaluation Framework — research summary combining the evaluation report and the interactive chunking lab. Prepared for today's sync.
+</footer>
+
+<a href="#overview" id="back-to-top" class="jump" title="Back to top">↑</a>
+
+<script>
+(function(){
+  var navLinks = Array.prototype.slice.call(document.querySelectorAll('nav.topnav a'));
+  var sections = navLinks.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+  var backToTop = document.getElementById('back-to-top');
+
+  function onScroll(){
+    var pos = window.scrollY + 90;
+    var current = sections[0];
+    sections.forEach(function(sec){ if (sec && sec.offsetTop <= pos) current = sec; });
+    navLinks.forEach(function(a){
+      a.classList.toggle('active', current && a.getAttribute('href') === '#' + current.id);
+    });
+    backToTop.classList.toggle('show', window.scrollY > 400);
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+</body>
+</html>
