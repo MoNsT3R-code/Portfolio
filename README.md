@@ -1,71 +1,171 @@
-# Musfira Sehar · Portfolio (v2, "studio" edition)
+# Musfira Sehar · Portfolio (v2, "Studio" Edition)
 
-A second design of the same portfolio, inspired by playful creative-developer sites: bold cream, black and coral colour blocks, a hamburger menu that opens full-screen with a circular reveal, line-by-line text reveals, parallax, a cursor follower, a marquee, and a clean project list where each row fills with coral and floats a preview. Pages: Home, Work (`/work`), a detailed page per project (`/work/<slug>`), About (`/about`) and Archive (`/archive`, every document and video). **Ask my portfolio** (BM25 retrieval in the browser, no LLM) is on every page.
+A second design of my portfolio, inspired by playful creative-developer sites. It uses bold cream, black and coral colour blocks, a full-screen menu with a circular reveal, line-by-line text animation, parallax, a cursor follower, and a clean project list that fills with coral and shows a preview on hover.
 
-Content, documents and scripts are the same as the sky edition in `../musfira-portfolio`; the two folders are independent copies.
+![Format](https://img.shields.io/badge/Build-Vite%20%2B%20React%20%2B%20TypeScript-646CFF?logo=vite&logoColor=white)
+![Search](https://img.shields.io/badge/Search-BM25%20in--browser-c49a2c)
+![Accessibility](https://img.shields.io/badge/Accessibility-WCAG%20AA-0f1c42)
+![Lighthouse](https://img.shields.io/badge/Lighthouse-96%E2%80%93100-brightgreen)
+![Install](https://img.shields.io/badge/Backend-None-brightgreen)
+![License](https://img.shields.io/badge/License-Not%20yet%20chosen-lightgrey)
 
-## Editing content
+---
 
-- **Text:** everything lives in [`src/content/portfolio.ts`](src/content/portfolio.ts). Components only render it.
-- **Placeholders:** missing facts are written as `[TODO: …]` and show on the page as dashed boxes. `npm run todos` lists them.
-- **Claude certificates:** `credentials` in the content file. Add `date`, `credentialId` and `url` (LinkedIn's "Show credential" link) and they appear on the certificate cards.
-- **GitHub projects:** `githubProjects` and `githubCoursework` in the content file. Facts come from each repository's README.
-- **About highlights:** wrap a phrase in `**double asterisks**` in `about.paragraphs` to highlight it in orange.
+## 🌐 Overview
 
-## Documents, decks and videos
+This is the "Studio" edition of my portfolio. It has five pages: Home, Work, a detailed page for each project, About and Archive. The Archive holds every document and video. **Ask my portfolio** is available on every page. It uses BM25 retrieval in the browser, so no language model or server is needed.
 
-The library is built from your own files by `npm run library`. It needs Windows with Word and PowerPoint, and Google Chrome.
+The content, documents and scripts match the "Sky" edition in `../musfira-portfolio`. The two folders are independent copies.
 
-1. Add an entry to [`assets-src/library.json`](assets-src/library.json): `id`, `project` (a project slug, or `research`), `kind` (`pdf`, `docx`, `deck`, `md`, `md-pack`, `html`, `video` or `image`), `title`, `description` and `src`. A `src` path starting with `~` is in your user folder.
-2. Run `npm run library`. Word and PowerPoint files become PDFs, Markdown is rendered to PDF, and thumbnails, page counts, video posters and durations are generated. Output goes to `public/library/` and `src/content/library.generated.json`; held items go to `public/library/held/` and `src/content/library.held.json`.
+---
 
-When you replace a file or drop an entry, rerun the script: outputs that no longer belong to any entry are deleted.
+## 📍 Quick Navigation
 
-### Held files
+* [🌐 Overview](#-overview)
+* [✨ Key Features](#-key-features)
+* [🗺️ Pages](#️-pages)
+* [✏️ Editing Content](#️-editing-content)
+* [📚 Documents, Decks and Videos](#-documents-decks-and-videos)
+* [🔒 Held Files](#-held-files)
+* [🧪 Commands](#-commands)
+* [🚀 Deploying](#-deploying)
+* [🏗️ How It's Built](#️-how-its-built)
+* [📊 Lighthouse Results](#-lighthouse-results)
+* [📁 Repository Structure](#-repository-structure)
+* [📄 License](#-license)
 
-Some files carry `"hold": "internal"` (they name Stewart systems, show company branding or a confidentiality label) or `"hold": "authorship"` (I couldn't confirm you made them). Held files:
+---
 
-- show on `npm run dev` (localhost) with a "Held" badge,
-- are left out of `npm run build`: their cards and metadata aren't bundled, and the files are deleted from `dist/`,
-- never reach git: `public/library/held/`, `src/content/library.held.json` and `assets-src/` (your original files and their local paths) are git-ignored, so they exist only on the computer that ran `npm run library`.
+## ✨ Key Features
 
-Once you have approval to publish them, set `PUBLISH_HELD = true` in `src/content/portfolio.ts`, or remove `hold` from individual entries.
+✅ **Studio design** - Cream, black and coral colour blocks with bold typography.
 
-## Commands
+✅ **Full-screen menu** - Opens with a circular reveal.
 
-| Command | What it does |
+✅ **Motion** - Line-by-line text reveals, parallax, a cursor follower and a scrolling marquee.
+
+✅ **Project list** - Each row fills with coral and floats a preview as you hover.
+
+✅ **Ask my portfolio** - Searches the site content in the browser with BM25.
+
+✅ **Day and night themes** - Follows the system setting until the visitor chooses one.
+
+✅ **Accessible** - Skip link, visible focus, native modal dialogs, and text that stays above AA contrast.
+
+---
+
+## 🗺️ Pages
+
+| Route | Page |
 | --- | --- |
-| `npm run dev` | Dev server with hot reload (shows held files) |
-| `npm run build` | Type-check, build, prerender every page to static HTML, write `404.html`, `sitemap.xml`, `robots.txt` and `llms.txt`, and strip held files |
-| `npm run preview` | Serve the production build locally |
-| `npm test` | BM25 retrieval tests |
-| `npm run todos` | List remaining `[TODO: …]` placeholders |
-| `npm run library` | Import documents, decks and videos (see above) |
-| `npm run assets` | Rebuild fonts (subset), certificate images, favicons and the Open Graph image |
+| `/` | Home |
+| `/work` | All projects |
+| `/work/<slug>` | Detailed case study for each project |
+| `/about` | About me |
+| `/archive` | Every document and video |
 
-## Deploying
+---
 
-**Vercel:** import the repo. Use the Vite preset, the build command `npm run build` and the output directory `dist`. `vercel.json` adds long-term caching for hashed assets.
+## ✏️ Editing Content
 
-**GitHub Pages (project site):** `BASE_PATH=/your-repo-name/ npm run build`, then publish `dist`.
+| What | Where |
+| --- | --- |
+| **Text** | `src/content/portfolio.ts`. Components only render this file. |
+| **Placeholders** | Missing facts are written as `[TODO: …]` and appear as dashed boxes on the page. Run `npm run todos` to list them. |
+| **Claude certificates** | The `credentials` list in the content file. Add `date`, `credentialId` and `url` to show them on the certificate cards. |
+| **GitHub projects** | `githubProjects` and `githubCoursework` in the content file. Facts come from each repository's README. |
+| **About highlights** | Wrap a phrase in `**double asterisks**` in `about.paragraphs` to highlight it in orange. |
 
-The videos add about 60 MB. That's fine on Vercel. If you deploy through a GitHub repository, keep each file under 100 MB.
+---
 
-## How it's built
+## 📚 Documents, Decks and Videos
 
-- **Pages:** a small history router, with every route prerendered to real HTML by `scripts/prerender.mjs`.
-- **Motion:** the projects section pins and moves sideways on screens 768px and wider; the journey chapters pin over a canvas particle galaxy. Phones and anyone with reduced motion get plain, swipeable or stacked layouts.
-- **Themes:** day and night, following the system setting until the visitor clicks the sun, the moon, or the theme button.
-- **Fonts:** Space Grotesk (headings) and Outfit (text), self-hosted and subset to 37 KB total.
-- **Accessibility:** skip link, visible focus, native modal dialogs, `inert` on hidden chapters, status shown by words and border style, and reveals that slide without fading so text never drops below AA contrast.
+The library is built from my own files by `npm run library`. This step needs Windows with Microsoft Word, Microsoft PowerPoint and Google Chrome.
 
-## Lighthouse (local production build, October 2026)
+1. Add an entry to `assets-src/library.json` with `id`, `project`, `kind`, `title`, `description` and `src`.
+   - `project` is a project slug, or `research`.
+   - `kind` is one of `pdf`, `docx`, `deck`, `md`, `md-pack`, `html`, `video` or `image`.
+   - A `src` path that starts with `~` is relative to the user folder.
+2. Run `npm run library`. Word and PowerPoint files become PDFs, Markdown is rendered to PDF, and thumbnails, page counts, video posters and durations are generated. Output goes to `public/library/` and `src/content/library.generated.json`.
 
-| Page | Performance | Accessibility | Best practices | SEO | Agentic browsing |
+After replacing a file or removing an entry, rerun the script. Outputs that no longer belong to any entry are deleted automatically.
+
+---
+
+## 🔒 Held Files
+
+Some files are held back from publishing for one of two reasons:
+- `"hold": "internal"` marks files that name internal systems, show company branding or carry a confidentiality label.
+- `"hold": "authorship"` marks files whose authorship I have not yet confirmed.
+
+How held files behave:
+- **Development:** They appear on `npm run dev` with a "Held" badge.
+- **Build:** They are left out of `npm run build`. Their cards and metadata are not bundled, and the files are removed from `dist/`.
+- **Git:** They never reach the repository. `public/library/held/`, `src/content/library.held.json` and `assets-src/` are git-ignored, so they exist only on the machine that ran `npm run library`.
+
+When a file is approved for publication, set `PUBLISH_HELD = true` in `src/content/portfolio.ts`, or remove `hold` from that entry.
+
+---
+
+## 🧪 Commands
+
+| Command | What It Does |
+| --- | --- |
+| `npm run dev` | Development server with hot reload. Shows held files. |
+| `npm run build` | Type-checks, builds, prerenders every page to static HTML, and writes `404.html`, `sitemap.xml`, `robots.txt` and `llms.txt`. Held files are removed. |
+| `npm run preview` | Serves the production build locally. |
+| `npm test` | Runs the BM25 retrieval tests. |
+| `npm run todos` | Lists remaining `[TODO: …]` placeholders. |
+| `npm run library` | Imports documents, decks and videos. |
+| `npm run assets` | Rebuilds the subset fonts, certificate images, favicons and the Open Graph image. |
+
+---
+
+## 🚀 Deploying
+
+**Vercel:** Import the repository, then use the Vite preset with the build command `npm run build` and the output directory `dist`. `vercel.json` adds long-term caching for hashed assets.
+
+**GitHub Pages (project site):** Run `BASE_PATH=/your-repo-name/ npm run build`, then publish the `dist` folder.
+
+The videos add about 60 MB. That is fine on Vercel. If you deploy through a GitHub repository, keep each file under 100 MB.
+
+---
+
+## 🏗️ How It's Built
+
+- **Routing:** A small history router, with every route prerendered to static HTML by `scripts/prerender.mjs`.
+- **Motion:** On screens 768px and wider, the projects section pins and scrolls sideways, and the journey chapters pin over a canvas particle galaxy. Phones and visitors who prefer reduced motion get plain, swipeable or stacked layouts.
+- **Themes:** Day and night, following the system setting until the visitor clicks the sun, the moon or the theme button.
+- **Fonts:** Space Grotesk for headings and Outfit for body text, self-hosted and subset to 37 KB in total.
+- **Accessibility:** Skip link, visible focus, native modal dialogs, `inert` on hidden chapters, and status shown by words and border style. Reveal animations slide without fading, so text never drops below AA contrast.
+
+---
+
+## 📊 Lighthouse Results
+
+Measured on a local production build, October 2026.
+
+| Page | Performance | Accessibility | Best Practices | SEO | Agentic Browsing |
 | --- | --- | --- | --- | --- | --- |
 | Home, mobile | 96–98 | 100 | 100 | 100 | 100 |
 | Home, desktop | 100 | 100 | 100 | 100 | 100 |
 | Case study, mobile | 99 | 100 | 100 | 100 | 100 |
 | Case study, desktop | 100 | 100 | 100 | 100 | 100 |
 
-Reports are in `lighthouse/`, and screenshots at 375, 768 and 1440 px in both themes are in `screenshots/`. Neither folder is committed.
+Lighthouse reports are stored in `lighthouse/`, and screenshots at 375, 768 and 1440 px in both themes are stored in `screenshots/`. Neither folder is committed.
+
+---
+
+## 📁 Repository Structure
+
+* **`src/content/portfolio.ts`** - All site text and project data.
+* **`src/`** - Components, pages and styles.
+* **`scripts/`** - Prerendering, library import and asset generation.
+* **`assets-src/`** - Source files for the library (git-ignored).
+* **`public/`** - Static assets, including the library output.
+
+---
+
+## 📄 License
+
+No license has been chosen for this repository yet.
